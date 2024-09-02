@@ -1,4 +1,4 @@
-import { hashSHA1 } from '../utils/hashing';
+import sha1 from 'sha1';
 import dbClient from '../utils/db';
 
 class UsersController {
@@ -8,21 +8,28 @@ class UsersController {
     if (!email) {
       return res.status(400).json({ error: 'Missing email' });
     }
-
     if (!password) {
       return res.status(400).json({ error: 'Missing password' });
     }
 
-    const existingUser = await dbClient.db.collection('users').findOne({ email });
-    if (existingUser) {
+    const usersCollection = dbClient.db.collection('users');
+    const userExists = await usersCollection.findOne({ email });
+
+    if (userExists) {
       return res.status(400).json({ error: 'Already exist' });
     }
 
-    const hashedPassword = hashSHA1(password);
-    const newUser = { email, password: hashedPassword };
-    const result = await dbClient.db.collection('users').insertOne(newUser);
+    const hashedPassword = sha1(password);
 
-    return res.status(201).json({ id: result.insertedId, email });
+    const result = await usersCollection.insertOne({
+      email,
+      password: hashedPassword,
+    });
+
+    return res.status(201).json({
+      id: result.insertedId,
+      email,
+    });
   }
 }
 
