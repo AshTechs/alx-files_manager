@@ -1,43 +1,47 @@
-import { MongoClient } from 'mongodb';
+const { MongoClient, ObjectId } = require('mongodb');
 
 class DBClient {
   constructor() {
-    const host = process.env.DB_HOST || 'localhost';
-    const port = process.env.DB_PORT || 27017;
-    const database = process.env.DB_DATABASE || 'files_manager';
-    const url = `mongodb://${host}:${port}`;
-
-    this.client = new MongoClient(url, { useUnifiedTopology: true });
+    this.client = null;
     this.db = null;
+    this.connect();
+  }
 
-    this.client.connect()
-      .then(() => {
-        this.db = this.client.db(database);
-        console.log('Connected to MongoDB');
-      })
-      .catch((err) => {
-        console.error(`Failed to connect to MongoDB: ${err.message}`);
+  async connect() {
+    try {
+      this.client = new MongoClient(process.env.DB_HOST || 'mongodb://localhost:27017', {
+        useUnifiedTopology: true,
       });
+      await this.client.connect();
+      this.db = this.client.db('files_manager');
+    } catch (error) {
+      console.error('Error connecting to MongoDB:', error);
+    }
   }
 
   isAlive() {
-    return this.db !== null;
+    return !!this.db;
   }
 
   async nbUsers() {
-    if (this.db) {
-      return this.db.collection('users').countDocuments();
-    }
-    throw new Error('Not connected to MongoDB');
+    return this.db.collection('users').countDocuments();
   }
 
   async nbFiles() {
-    if (this.db) {
-      return this.db.collection('files').countDocuments();
-    }
-    throw new Error('Not connected to MongoDB');
+    return this.db.collection('files').countDocuments();
+  }
+
+  async findUserById(id) {
+    return this.db.collection('users').findOne({ _id: new ObjectId(id) });
+  }
+
+  async findFileById(id) {
+    return this.db.collection('files').findOne({ _id: new ObjectId(id) });
+  }
+
+  async insertFile(fileData) {
+    return this.db.collection('files').insertOne(fileData);
   }
 }
 
-const dbClient = new DBClient();
-export default dbClient;
+module.exports = new DBClient();
