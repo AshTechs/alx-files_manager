@@ -25,7 +25,7 @@ class UsersController {
       const result = await usersCollection.insertOne({ email, password: hashedPassword });
 
       const newUser = {
-        id: result.insertedId,
+        id: result.insertedId.toString(),
         email,
       };
       return res.status(201).json(newUser);
@@ -58,7 +58,7 @@ class UsersController {
       }
 
       const { email, _id } = user;
-      return res.status(200).json({ id: _id, email });
+      return res.status(200).json({ id: _id.toString(), email });
     } catch (error) {
       console.error('Error retrieving user:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
