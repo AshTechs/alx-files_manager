@@ -5,7 +5,7 @@ class AppController {
   static async getStatus(req, res) {
     try {
       const redisStatus = redisClient.isAlive();
-      const dbStatus = await dbClient.isAlive();
+      const dbStatus = dbClient.isAlive();
       res.status(200).json({ redis: redisStatus, db: dbStatus });
     } catch (error) {
       res.status(500).json({ error: 'Internal Server Error' });
