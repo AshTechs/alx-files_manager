@@ -4,7 +4,7 @@ const { promisify } = require('util');
 class RedisClient {
   constructor() {
     this.client = redis.createClient();
-    
+
     this.getAsync = promisify(this.client.get).bind(this);
     this.setAsync = promisify(this.client.set).bind(this);
     this.delAsync = promisify(this.client.del).bind(this);
@@ -27,16 +27,16 @@ class RedisClient {
       const value = await this.getAsync(key);
       return value;
     } catch (err) {
-      console.error('Error getting key from Redis:', err.message);
+      console.error('Error getting value from Redis:', err.message);
       return null;
     }
   }
 
-  async set(key, value, duration = 86400) {
+  async set(key, value, duration) {
     try {
       await this.setAsync(key, value, 'EX', duration);
     } catch (err) {
-      console.error('Error setting key in Redis:', err.message);
+      console.error('Error setting value in Redis:', err.message);
     }
   }
 
@@ -44,9 +44,9 @@ class RedisClient {
     try {
       await this.delAsync(key);
     } catch (err) {
-      console.error('Error deleting key from Redis:', err.message);
+      console.error('Error deleting value from Redis:', err.message);
     }
   }
 }
 
-module.exports = new RedisClient();
+const redisClient = new
