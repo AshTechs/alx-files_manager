@@ -128,7 +128,7 @@ class FilesController {
     const user = await FilesController.retrieveUserBasedOnToken(req);
 
     const files = dbClient.db.collection('files');
-    const file = await files.findOne({ _id: ObjectId(id), userId: user?._id || null });
+    const file = await files.findOne({ _id: ObjectId(id), userId: user?_id || null });
 
     if (!file || (!file.isPublic && !user)) {
       res.status(404).send({ error: 'Not found' });
