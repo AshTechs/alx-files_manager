@@ -170,68 +170,69 @@ class FilesController {
  * @param {Object} res - Express response object
  * @returns {Object} - Express response object
  */
-static async getShow(req, res) {
-  const { id } = req.params;
-  const user = await FilesController.retrieveUserBasedOnToken(req);
+  static async getShow(req, res) {
+    const { id } = req.params;
+    const user = await FilesController.retrieveUserBasedOnToken(req);
 
-  if (!user) {
-    res.status(401).send({ error: 'Unauthorized' });
-    return;
+    if (!user) {
+      res.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
+
+    const files = dbClient.db.collection('files');
+    const file = await files.findOne({ _id: ObjectId(id), userId: user._id });
+
+    if (!file) {
+      res.status(404).send({ error: 'Not found' });
+    } else {
+      file.id = file._id;
+      delete file._id;
+      delete file.localPath;
+      res.status(200).send(file);
+    }
   }
 
-  const files = dbClient.db.collection('files');
-  const file = await files.findOne({ _id: ObjectId(id), userId: user._id });
-
-  if (!file) {
-    res.status(404).send({ error: 'Not found' });
-  } else {
-    file.id = file._id;
-    delete file._id;
-    delete file.localPath;
-    res.status(200).send(file);
-  }
-}
-/**
+  /**
  * @method getIndex
  * @description retrieve all files for a user with pagination and optional parentId
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @returns {Object} - Express response object
  */
-static async getIndex(req, res) {
-  const user = await FilesController.retrieveUserBasedOnToken(req);
+  static async getIndex(req, res) {
+    const user = await FilesController.retrieveUserBasedOnToken(req);
 
-  if (!user) {
-    res.status(401).send({ error: 'Unauthorized' });
-    return;
+    if (!user) {
+      res.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { parentId = 0, page = 0 } = req.query;
+    const files = dbClient.db.collection('files');
+
+    const pageSize = 20;
+    const skip = page * pageSize;
+
+    const query = {
+      userId: user._id.toString(),
+      parentId,
+    };
+
+    const result = await files.aggregate([
+      { $match: query },
+      { $skip: skip },
+      { $limit: pageSize },
+    ]).toArray();
+
+    const finalResult = result.map((file) => {
+      const newFile = { ...file, id: file._id };
+      delete newFile._id;
+      delete newFile.localPath;
+      return newFile;
+    });
+
+    res.status(200).send(finalResult);
   }
-
-  const { parentId = 0, page = 0 } = req.query;
-  const files = dbClient.db.collection('files');
-
-  const pageSize = 20;
-  const skip = page * pageSize;
-
-  const query = {
-    userId: user._id.toString(),
-    parentId,
-  };
-
-  const result = await files.aggregate([
-    { $match: query },
-    { $skip: skip },
-    { $limit: pageSize },
-  ]).toArray();
-
-  const finalResult = result.map((file) => {
-    const newFile = { ...file, id: file._id };
-    delete newFile._id;
-    delete newFile.localPath;
-    return newFile;
-  });
-
-  res.status(200).send(finalResult);
-}
 
   /**
    * @method putPublish
