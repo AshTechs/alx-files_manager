@@ -1,47 +1,43 @@
-const { MongoClient, ObjectId } = require('mongodb');
+import { MongoClient } from 'mongodb';
 
 class DBClient {
   constructor() {
-    this.client = null;
-    this.db = null;
-    this.connect();
-  }
+    const host = process.env.DB_HOST || 'localhost';
+    const port = process.env.DB_PORT || 27017;
+    const database = process.env.DB_DATABASE || 'files_manager';
+    const url = `mongodb://${host}:${port}`;
 
-  async connect() {
-    try {
-      this.client = new MongoClient(process.env.DB_HOST || 'mongodb://localhost:27017', {
-        useUnifiedTopology: true,
+    this.client = new MongoClient(url, { useUnifiedTopology: true });
+    this.db = null;
+
+    this.client.connect()
+      .then(() => {
+        this.db = this.client.db(database);
+        console.log('Connected to MongoDB');
+      })
+      .catch((err) => {
+        console.error(`Failed to connect to MongoDB: ${err.message}`);
       });
-      await this.client.connect();
-      this.db = this.client.db('files_manager');
-    } catch (error) {
-      console.error('Error connecting to MongoDB:', error);
-    }
   }
 
   isAlive() {
-    return !!this.db;
+    return this.db !== null;
   }
 
   async nbUsers() {
-    return this.db.collection('users').countDocuments();
+    if (this.db) {
+      return this.db.collection('users').countDocuments();
+    }
+    throw new Error('Not connected to MongoDB');
   }
 
   async nbFiles() {
-    return this.db.collection('files').countDocuments();
-  }
-
-  async findUserById(id) {
-    return this.db.collection('users').findOne({ _id: new ObjectId(id) });
-  }
-
-  async findFileById(id) {
-    return this.db.collection('files').findOne({ _id: new ObjectId(id) });
-  }
-
-  async insertFile(fileData) {
-    return this.db.collection('files').insertOne(fileData);
+    if (this.db) {
+      return this.db.collection('files').countDocuments();
+    }
+    throw new Error('Not connected to MongoDB');
   }
 }
 
-module.exports = new DBClient();
+const dbClient = new DBClient();
+export default dbClient;
