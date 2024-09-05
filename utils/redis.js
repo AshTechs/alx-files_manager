@@ -4,7 +4,6 @@ const { promisify } = require('util');
 class RedisClient {
   constructor() {
     this.client = redis.createClient();
-
     this.getAsync = promisify(this.client.get).bind(this);
     this.setAsync = promisify(this.client.set).bind(this);
     this.delAsync = promisify(this.client.del).bind(this);
@@ -49,4 +48,5 @@ class RedisClient {
   }
 }
 
-const redisClient = new
+const redisClient = new RedisClient();
+module.exports = redisClient;
